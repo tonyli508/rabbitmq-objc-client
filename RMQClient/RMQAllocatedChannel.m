@@ -145,7 +145,14 @@
     [self recoverExchanges];
     [self recoverExchangeBindings]; 
     [self recoverQueuesAndTheirBindings];
-    [self recoverConsumers];
+    
+    /**
+     don't recover consumers
+     consumers will be recovered by client delegate callbacks
+     
+     code:
+     [self recoverConsumers];
+     */
 }
 
 - (void)blockingWaitOn:(Class)method {
