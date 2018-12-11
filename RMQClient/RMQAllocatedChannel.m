@@ -129,6 +129,10 @@
                   }];
 }
 
+- (void)removeCurrentChannel {
+    [self.allocator releaseChannelNumber:self.channelNumber];
+}
+
 - (void)blockingClose {
     [self.dispatcher sendSyncMethodBlocking:[RMQChannelClose new]];
     [self.allocator releaseChannelNumber:self.channelNumber];
@@ -143,9 +147,16 @@
     [self recoverPrefetch];
     [self recoverConfirmations];
     [self recoverExchanges];
-    [self recoverExchangeBindings]; 
+    [self recoverExchangeBindings];
     [self recoverQueuesAndTheirBindings];
-    [self recoverConsumers];
+    
+    /**
+     don't recover consumers
+     consumers will be recovered by client delegate callbacks
+     
+     code:
+     [self recoverConsumers];
+     */
 }
 
 - (void)blockingWaitOn:(Class)method {
@@ -243,7 +254,7 @@
     [self.dispatcher sendSyncMethod:[[RMQBasicConsume alloc] initWithQueue:consumer.queueName
                                                                consumerTag:consumer.tag
                                                                    options:consumer.options
-                                                                   arguments:consumer.arguments]
+                                                                 arguments:consumer.arguments]
                   completionHandler:^(RMQFrameset *frameset) {
                       self.consumers[consumer.tag] = consumer;
                   }];
@@ -273,15 +284,15 @@
                                                                routingKey:[[RMQShortstr alloc] init:routingKey]
                                                                   options:options];
     RMQContentBody *contentBody = [[RMQContentBody alloc] initWithData:body];
-
+    
     NSData *bodyData = contentBody.amqEncoded;
-
+    
     NSArray *mergedProperties = [RMQBasicProperties mergeProperties:properties
                                                        withDefaults:RMQBasicProperties.defaultProperties];
     RMQContentHeader *contentHeader = [[RMQContentHeader alloc] initWithClassID:publish.classID
                                                                        bodySize:@(bodyData.length)
                                                                      properties:mergedProperties];
-
+    
     NSArray *contentBodies = [self contentBodiesFromData:bodyData
                                               inChunksOf:self.contentBodySize.integerValue];
     RMQFrameset *frameset = [[RMQFrameset alloc] initWithChannelNumber:self.channelNumber
@@ -499,7 +510,7 @@ completionHandler:(RMQConsumerDeliveryHandler)userCompletionHandler {
     NSString *declaredQueueName = [originalQueueName isEqualToString:@""]
     ? [self.nameGenerator generateWithPrefix:@"rmq-objc-client.gen-"]
     : originalQueueName;
-
+    
     if (self.queues[declaredQueueName]) {
         NSError *error = [NSError errorWithDomain:RMQErrorDomain
                                              code:RMQErrorChannelQueueNameCollision
@@ -511,12 +522,12 @@ completionHandler:(RMQConsumerDeliveryHandler)userCompletionHandler {
                                              options:options
                                            arguments:arguments
                                              channel:(id<RMQChannel>)self];
-
+        
         RMQQueueDeclare *method = [[RMQQueueDeclare alloc] initWithQueue:declaredQueueName
                                                                  options:options
                                                                arguments:arguments];
         [self.dispatcher sendSyncMethod:method];
-
+        
         self.queues[q.name] = q;
         self.queueBindings[q.name] = [NSMutableSet new];
         return q;

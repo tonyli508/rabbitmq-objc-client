@@ -74,6 +74,8 @@
 /// @brief Closes the channel, blocking the calling thread.
 - (void)blockingClose;
 
+- (void)removeCurrentChannel;
+
 /*!
  * @brief Turn on publisher confirmations. Sends a confirm.select.
  * @see afterConfirmed
@@ -163,7 +165,7 @@
                               options:(RMQBasicConsumeOptions)options
                             arguments:(RMQTable * _Nonnull)arguments
                               handler:(RMQConsumerDeliveryHandler _Nonnull)handler;
-                              
+
 /// @brief Internal method used by a consumer object
 - (nonnull NSString *)generateConsumerTag;
 

@@ -78,7 +78,6 @@ NSInteger const RMQChannelLimit = 65535;
 @property (nonatomic, readwrite) id<RMQLocalSerialQueue> commandQueue;
 @property (nonatomic, readwrite) id<RMQWaiterFactory> waiterFactory;
 @property (nonatomic, readwrite) id<RMQHeartbeatSender> heartbeatSender;
-@property (nonatomic, weak, readwrite) id<RMQConnectionDelegate> delegate;
 @property (nonatomic, readwrite) id <RMQChannel> channelZero;
 @property (nonatomic, readwrite) RMQConnectionConfig *config;
 @property (nonatomic, readwrite) NSMutableDictionary *userChannels;
@@ -110,13 +109,13 @@ NSInteger const RMQChannelLimit = 65535;
         self.channelAllocator.sender = self;
         self.frameHandler = frameHandler;
         self.reader = [[RMQReader alloc] initWithTransport:self.transport frameHandler:self];
-
+        
         self.userChannels = [NSMutableDictionary new];
         self.delegate = delegate;
         self.commandQueue = commandQueue;
         self.waiterFactory = waiterFactory;
         self.heartbeatSender = heartbeatSender;
-
+        
         self.channelZero = [self.channelAllocator allocate];
         [self.channelZero activateWithDelegate:self.delegate];
     }
@@ -136,7 +135,7 @@ NSInteger const RMQChannelLimit = 65535;
          recoverFromConnectionClose:(BOOL)shouldRecoverFromConnectionClose {
     NSError *error = NULL;
     RMQURI *rmqURI = [RMQURI parse:uri error:&error];
-
+    
     RMQTCPSocketTransport *transport = [[RMQTCPSocketTransport alloc] initWithHost:rmqURI.host
                                                                               port:rmqURI.portNumber
                                                                         tlsOptions:tlsOptions];
@@ -148,8 +147,8 @@ NSInteger const RMQChannelLimit = 65535;
                                                                                         clock:[RMQTickingClock new]];
     RMQCredentials *credentials = [[RMQCredentials alloc] initWithUsername:rmqURI.username
                                                                   password:rmqURI.password];
-
-
+    
+    
     RMQProcessInfoNameGenerator *nameGenerator = [RMQProcessInfoNameGenerator new];
     RMQGCDSerialQueue *commandQueue = [[RMQGCDSerialQueue alloc] initWithName:[nameGenerator generateWithPrefix:@"connection-commands"]];
     RMQConnectionRecover *recovery = [[RMQConnectionRecover alloc] initWithInterval:recoveryInterval
@@ -158,7 +157,7 @@ NSInteger const RMQChannelLimit = 65535;
                                                                     heartbeatSender:heartbeatSender
                                                                        commandQueue:commandQueue
                                                                            delegate:delegateProxy];
-
+    
     RMQConnectionConfig *config = [[RMQConnectionConfig alloc] initWithCredentials:credentials
                                                                         channelMax:channelMax
                                                                           frameMax:frameMax
@@ -269,16 +268,16 @@ NSInteger const RMQChannelLimit = 65535;
 
 - (void)start:(void (^)(void))completionHandler {
     NSError *connectError = NULL;
-
+    
     [self.transport connectAndReturnError:&connectError];
     if (connectError) {
         [self.delegate connection:self failedToConnectWithError:connectError];
     } else {
         [self.transport write:[RMQProtocolHeader new].amqEncoded];
-
+        
         [self.commandQueue enqueue:^{
             id<RMQWaiter> handshakeCompletion = [self.waiterFactory makeWithTimeout:self.handshakeTimeout];
-
+            
             RMQHandshaker *handshaker = [[RMQHandshaker alloc] initWithSender:self
                                                                        config:self.config
                                                             completionHandler:^(NSNumber *heartbeatTimeout) {
@@ -292,7 +291,7 @@ NSInteger const RMQChannelLimit = 65535;
                                                                  frameHandler:handshaker];
             handshaker.reader = handshakeReader;
             [handshakeReader run];
-
+            
             if (handshakeCompletion.timesOut) {
                 NSError *error = [NSError errorWithDomain:RMQErrorDomain
                                                      code:RMQErrorConnectionHandshakeTimedOut
@@ -310,13 +309,13 @@ NSInteger const RMQChannelLimit = 65535;
 - (id<RMQChannel>)createChannel {
     id<RMQChannel> ch = self.channelAllocator.allocate;
     self.userChannels[ch.channelNumber] = ch;
-
+    
     [self.commandQueue enqueue:^{
         [ch activateWithDelegate:self.delegate];
     }];
-
+    
     [ch open];
-
+    
     return ch;
 }
 
@@ -366,7 +365,7 @@ NSInteger const RMQChannelLimit = 65535;
 
 - (void)handleFrameset:(RMQFrameset *)frameset {
     id method = frameset.method;
-
+    
     if ([method isKindOfClass:[RMQConnectionClose class]]) {
         [self sendFrameset:[[RMQFrameset alloc] initWithChannelNumber:@0 method:[RMQConnectionCloseOk new]]];
         self.handshakeComplete = NO;

@@ -108,7 +108,7 @@ typedef NS_ENUM(NSUInteger, DispatcherState) {
             [self.commandQueue suspend];
         }];
     }];
-
+    
     [self.commandQueue blockingEnqueue:^{
         RMQFramesetValidationResult *result = [self.validator expect:method];
         if (result.error) {
@@ -124,14 +124,14 @@ typedef NS_ENUM(NSUInteger, DispatcherState) {
             if ([self isClose:method]) {
                 [self processClientClose];
             }
-
+            
             RMQFrameset *outgoingFrameset = [[RMQFrameset alloc] initWithChannelNumber:self.channelNumber
                                                                                 method:method];
             [self.commandQueue suspend];
             [self.sender sendFrameset:outgoingFrameset];
         }];
     }];
-
+    
     [self.commandQueue enqueue:^{
         RMQFramesetValidationResult *result = [self.validator expect:method.syncResponse];
         if (self.channelIsOpen && result.error) {
@@ -155,7 +155,7 @@ typedef NS_ENUM(NSUInteger, DispatcherState) {
             [self.sender sendFrameset:frameset];
         }];
     }];
-
+    
     [self.commandQueue blockingEnqueue:^{
         RMQFramesetValidationResult *result = [self.validator expect:method.syncResponse];
         if (self.channelIsOpen && result.error) {
