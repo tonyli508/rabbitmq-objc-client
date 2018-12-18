@@ -277,4 +277,8 @@ completionHandler:(RMQConsumerDeliveryHandler)completionHandler {
     [self.delegate channel:self error:error];
 }
 
+- (void)removeCurrentChannel {
+    
+}
+
 @end
