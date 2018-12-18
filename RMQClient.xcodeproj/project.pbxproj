@@ -439,6 +439,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		10AE91F421C9133D00D2260F /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				AEE7FE961C3BCA6000DF8C4F /* Info.plist */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
 		AE26FA2F1C970E9A00CDBBAA /* Channels */ = {
 			isa = PBXGroup;
 			children = (
@@ -750,7 +758,7 @@
 		AEE7FE931C3BCA6000DF8C4F /* RMQClient */ = {
 			isa = PBXGroup;
 			children = (
-				AEE7FE961C3BCA6000DF8C4F /* Info.plist */,
+				10AE91F421C9133D00D2260F /* Resources */,
 				AEE7FE941C3BCA6000DF8C4F /* RMQClient.h */,
 				AEA8A7751CCA103700371E38 /* Connection */,
 				AE34153E1CEB73C90071177A /* Recovery */,
